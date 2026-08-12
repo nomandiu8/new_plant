@@ -44,6 +44,10 @@ Upload a photo of a plant leaf or fruit, and the tool returns:
 2. **Lesion severity estimate** — percentage of leaf/fruit area affected (from DeepLabV3+/EfficientNet-B3 segmenter)
 3. **Confidence flag** — a ground-truth-free self-consistency check: does the classifier's own Grad-CAM attention fall inside its predicted lesion region?
 
+## Validation Scope
+
+> **Note:** This confidence flag is validated only for the convolutional pipeline used here (ConvNeXtV2-Tiny classifier + DeepLabV3+/EfficientNet-B3 segmenter). The paper found Grad-CAM attention is faithful for convolutional architectures but not for the transformer segmenter tested (SegFormer-B2), so this confidence flag should not be assumed to generalize to other model combinations.
+
 ## Models
 
 | Component | Architecture | Purpose |
