@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plant Disease AI Diagnosis</title>
+    <!-- Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            color: var(--text-main);
+            min-height: 100vh;
+            margin: 0;
+            padding: 40px 20px;
+            box-sizing: border-box;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin: 0;
+            background: linear-gradient(to right, #34d399, #10b981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 4px 20px rgba(16, 185, 129, 0.2);
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            margin-top: 10px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        @media (min-width: 900px) {
+            .container {
+                grid-template-columns: 400px 1fr;
+            }
+        }
+
+        .glass-panel {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .glass-panel:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6);
+        }
+
+        /* LEFT SIDE - UPLOAD */
+        .upload-area {
+            border: 2px dashed rgba(16, 185, 129, 0.5);
+            border-radius: 15px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(16, 185, 129, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: var(--primary);
+        }
+
+        .upload-area p {
+            margin: 0;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        #preview-container {
+            margin-top: 20px;
+            display: none;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        #preview {
+            width: 100%;
+            display: block;
+        }
+
+        button {
+            width: 100%;
+            background: linear-gradient(to right, #10b981, #059669);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.4);
+            font-family: 'Outfit', sans-serif;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 25px -5px rgba(16, 185, 129, 0.5);
+        }
+
+        button:disabled {
+            background: #334155;
+            color: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* RIGHT SIDE - RESULTS */
+        .results-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .empty-state {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            opacity: 0.7;
+        }
+
+        #results-content {
+            display: none;
+            width: 100%;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .disease-name {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #fff;
+            margin: 0 0 10px 0;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .confidence-badge {
+            display: inline-block;
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            margin: 0 6px 20px 6px;
+        }
+
+        .flag-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 0 6px 20px 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .flag-badge.high {
+            background: rgba(16, 185, 129, 0.2);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.4);
+        }
+
+        .flag-badge.low {
+            background: rgba(244, 63, 94, 0.15);
+            color: #fb7185;
+            border: 1px solid rgba(244, 63, 94, 0.4);
+        }
+
+        .badge-row {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .flag-note {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            max-width: 520px;
+            margin: 0 auto 20px auto;
+            line-height: 1.5;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .stats-row strong {
+            color: var(--text-main);
+        }
+
+        .scope-note {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            max-width: 640px;
+            margin: 10px auto 0 auto;
+            line-height: 1.5;
+            opacity: 0.85;
+        }
+
+        .images-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .image-box {
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid var(--border);
+        }
+
+        .image-box h4 {
+            margin: 0 0 12px 0;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .image-box img {
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+        }
+
+        /* LOADER */
+        .loader-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(16, 185, 129, 0.2);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Plant AI Diagnosis</h1>
+    <p>Faithfulness-Gated Decision Support System</p>
+    <p class="scope-note">
+        Validated only for the convolutional pipeline used here (ConvNeXtV2-Tiny classifier +
+        DeepLabV3+/EfficientNet-B3 segmenter). The paper found Grad-CAM attention is faithful for
+        convolutional architectures but not for the transformer segmenter tested (SegFormer-B2),
+        so this confidence flag should not be assumed to generalize to other model combinations.
+    </p>
+</div>
+
+<div class="container">
+    <!-- LEFT PANEL: UPLOAD -->
+    <div class="glass-panel">
+        <div class="upload-area" id="dropzone" onclick="document.getElementById('fileInput').click()">
+            <p>📁 Click or Drop Image Here</p>
+            <input type="file" id="fileInput" style="display: none;" accept="image/*">
+        </div>
+        
+        <div id="preview-container">
+            <img id="preview" src="" alt="Preview">
+        </div>
+
+        <button id="predictBtn" disabled>Analyze Image</button>
+    </div>
+
+    <!-- RIGHT PANEL: RESULTS -->
+    <div class="glass-panel results-panel">
+        
+        <div class="empty-state" id="empty-state">
+            Upload an image to see the AI diagnosis
+        </div>
+
+        <div class="loader-container" id="loader">
+            <div class="spinner"></div>
+            <p style="color: #94a3b8; font-weight: 600;">Analyzing image architecture...</p>
+        </div>
+
+        <div id="results-content">
+            <h2 class="disease-name" id="disease-name">Disease Name</h2>
+
+            <div class="badge-row">
+                <div class="confidence-badge" id="confidence-score">Confidence: 0%</div>
+                <div class="flag-badge" id="flag-badge" style="display: none;">Confidence flag: —</div>
+            </div>
+
+            <div class="stats-row" id="stats-row" style="display: none;">
+                <span>Severity: <strong id="stat-severity">—</strong></span>
+                <span>CAM&ndash;mask IoU: <strong id="stat-iou">—</strong></span>
+            </div>
+
+            <p class="flag-note" id="flag-note" style="display: none;"></p>
+
+            <div class="images-grid">
+                <div class="image-box">
+                    <h4>Segmentation Mask</h4>
+                    <img id="lesionImg" src="" alt="Lesion Mask">
+                </div>
+                <div class="image-box">
+                    <h4>XAI (Grad-CAM)</h4>
+                    <img id="camImg" src="" alt="Grad CAM">
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    let base64Image = "";
+
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                base64Image = evt.target.result;
+                const preview = document.getElementById('preview');
+                preview.src = base64Image;
+                document.getElementById('preview-container').style.display = 'block';
+                document.getElementById('predictBtn').disabled = false;
+                
+                // Reset right panel
+                document.getElementById('results-content').style.display = 'none';
+                document.getElementById('empty-state').style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+
+    document.getElementById('predictBtn').addEventListener('click', async function() {
+        if (!base64Image) return;
+
+        this.disabled = true;
+        document.getElementById('empty-state').style.display = 'none';
+        document.getElementById('results-content').style.display = 'none';
+        document.getElementById('loader').style.display = 'flex';
+
+        try {
+            const response = await fetch('/api/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: base64Image })
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                alert("Error: " + (data.error || "Failed to process request"));
+                return;
+            }
+
+            // Prefer the structured fields the backend now parses out of the
+            // Gradio app's markdown summary. Fall back to parsing the raw
+            // summary client-side only if those fields are missing, so this
+            // keeps working even against an older/unmodified predict.py.
+            const summary = data.summary || "";
+
+            let diseaseName = data.disease_name;
+            if (!diseaseName) {
+                const diseaseMatch = summary.match(/\*\*([^*]+)\*\*/);
+                diseaseName = diseaseMatch ? diseaseMatch[1] : "Unknown Classification";
+            }
+
+            let confidence = data.classification_confidence;
+            if (!confidence) {
+                const confMatch = summary.match(/Classification confidence\s*\|\s*([^|\n]+)/);
+                confidence = confMatch ? confMatch[1].trim() : "";
+            }
+
+            document.getElementById('disease-name').textContent = diseaseName;
+            document.getElementById('confidence-score').textContent = "AI Confidence: " + confidence;
+
+            // Faithfulness-gated confidence flag — the paper's central contribution.
+            const flagBadge = document.getElementById('flag-badge');
+            const flag = (data.confidence_flag || "").toUpperCase();
+            if (flag === "HIGH" || flag === "LOW") {
+                flagBadge.textContent = "Confidence flag: " + flag;
+                flagBadge.className = "flag-badge " + (flag === "HIGH" ? "high" : "low");
+                flagBadge.style.display = "inline-block";
+            } else {
+                flagBadge.style.display = "none";
+            }
+
+            const flagNoteEl = document.getElementById('flag-note');
+            if (data.flag_note) {
+                flagNoteEl.textContent = data.flag_note;
+                flagNoteEl.style.display = "block";
+            } else {
+                flagNoteEl.style.display = "none";
+            }
+
+            const statsRow = document.getElementById('stats-row');
+            if (data.severity || data.cam_mask_iou) {
+                document.getElementById('stat-severity').textContent = data.severity || "—";
+                document.getElementById('stat-iou').textContent = data.cam_mask_iou || "—";
+                statsRow.style.display = "flex";
+            } else {
+                statsRow.style.display = "none";
+            }
+
+            if (data.lesion_overlay) document.getElementById('lesionImg').src = data.lesion_overlay;
+            if (data.cam_overlay) document.getElementById('camImg').src = data.cam_overlay;
+
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('results-content').style.display = 'block';
+            
+        } catch (e) {
+            alert("Error connecting to server");
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('empty-state').style.display = 'block';
+        } finally {
+            this.disabled = false;
+        }
+    });
+</script>
+
+</body>
+</html>
